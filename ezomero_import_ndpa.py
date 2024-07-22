@@ -8,7 +8,7 @@ import os
 import xmltodict
 
 
-def find_image_id(conn,filename):
+def find_image_id(conn,filename):	
 	proj_ids = ez.get_project_ids(conn)
 	# found = False
 	for proj in proj_ids:
@@ -18,13 +18,11 @@ def find_image_id(conn,filename):
 			found_ids = ez.filter_by_filename(conn,image_ids,filename)
 			
 			if len(found_ids) > 0:			
-				ndpi_index = np.min(found_ids)		
-				# print(f'project: {proj}, dataset: {dset}, image: {ndpi_index}')					
+				ndpi_index = np.min(found_ids)						
 				return(ndpi_index)
 
 # def get_stage_center(image):
 # 	meta_data = image[0].loadOriginalMetadata()
-# 	# print(meta_data)
 # 	for item in meta_data[1]:
 # 		if type(item) is tuple:
 # 			if item[0] == 'stage.center':
@@ -41,6 +39,7 @@ def get_slide_center(image):
 				y = item[1]
 				return((x,y))
 
+
 def get_imageDims(image):
 	meta_data = image[0].loadOriginalMetadata()	
 	for item in meta_data[1]:
@@ -51,6 +50,7 @@ def get_imageDims(image):
 				x = item[1]
 				return((x,y))
 
+
 def hex_to_rgba(hcolor):
 	hcolor = hcolor.lstrip('#')
 	return tuple([int(hcolor[i:i+2], 16) for i in (0, 2, 4)]+[255])
@@ -59,13 +59,20 @@ def hex_to_rgba(hcolor):
 def check_dupl_roi(image):
 	pass
 
+
 def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
 	omero_rois = []
 	with open(fname, "rb") as file:
 		xml = xmltodict.parse(file, dict_constructor=dict)
 
+	# insert into list if only one annotation/roi
+	if isinstance(xml['annotations']['ndpviewstate'],dict):
+		annotations = [xml['annotations']['ndpviewstate']]
+	else:
+		annotations = xml['annotations']['ndpviewstate']
 
-	for roi in xml['annotations']['ndpviewstate']:
+	# for roi in xml['annotations']['ndpviewstate']:		
+	for roi in annotations:		
 		omero_roi = {}
 		anno_type = roi['annotation']['@type']
 		display_name = roi['annotation']['@displayname']
@@ -158,25 +165,19 @@ def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
 	return omero_rois
 
 
-def main():		
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-f', '--filename')
-	args = parser.parse_args()		
-
+def ndpa_name(fullname):
 	extension = re.compile('(.+)(\.ndpa)')
-	fname = extension.match(args.filename)
-	
+	fname = extension.match(fullname.strip('\n'))
 	if fname:
 		ndpi_fname = fname.group(1)
-		ndpa_fname = args.filename
+		ndpa_fname = fullname.strip('\n')
 	else:
-		ndpi_fname = args.filename
-		ndpa_fname = args.filename+'.ndpa'
+		ndpi_fname = fullname.strip('\n')
+		ndpa_fname = fullname+'.ndpa'
+	return (ndpi_fname, ndpa_fname)
 
-	conn = ez.connect()
-	# digits = re.compile('\d+')
-	# nmPerPx = 230 # must calculate somehow
 
+def add_rois(conn,ndpi_fname,ndpa_fname):	
 	ndpi_index = find_image_id(conn,ndpi_fname)
 	
 	image = ez.get_image(conn,image_id=int(ndpi_index),no_pixels=True)
@@ -193,8 +194,7 @@ def main():
 	image_dims = get_imageDims(image)
 	offset = {}
 	offset['x'] = image_dims[0]/2-slide_center[0]/nmPerPxX
-	offset['y'] = image_dims[1]/2-slide_center[1]/nmPerPxY
-	# print(offset)
+	offset['y'] = image_dims[1]/2-slide_center[1]/nmPerPxY	
 	
 	rois = convert_rois(ndpa_fname,nmPerPxX,nmPerPxY,offset)
 
@@ -203,6 +203,28 @@ def main():
 		shapes.append(roi[0])	
 		ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
 		# how does description show up in Omero?
+
+
+def main():		
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-f', '--filename')
+	parser.add_argument('-l', '--filelist')
+	args = parser.parse_args()		
+	conn = ez.connect()
+
+	if args.filelist:
+		with open(args.filelist) as flist:
+			line = flist.readline()			
+			while line != '':								
+				ndpi_fname,ndpa_fname = ndpa_name(line)
+				add_rois(conn,ndpi_fname,ndpa_fname)		
+				line = flist.readline()
+	elif args.filename:
+		ndpi_fname,ndpa_fname = ndpa_name(args.filename)
+		add_rois(conn,ndpi_fname,ndpa_fname)
+	else:
+		return
+	
 	
 	conn.close() 
 
