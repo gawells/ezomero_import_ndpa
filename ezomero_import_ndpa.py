@@ -200,7 +200,6 @@ def add_rois(conn,ndpi_fname,ndpa_fname):
 	nmPerPxX = model.LengthI(sizeX,model.enums.UnitsLength.NANOMETER).getValue()
 	nmPerPxY = model.LengthI(sizeY,model.enums.UnitsLength.NANOMETER).getValue()
 
-	# meta_data = image[0].loadOriginalMetadata()
 	slide_center = get_slide_center(image)
 	image_dims = get_imageDims(image)
 	offset = {}
