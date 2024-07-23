@@ -172,16 +172,20 @@ def files_exist(ndpi_fname,ndpa_fname):
 def ndp_names(fullname,conn):
 	p = Path(fullname)	
 	if p.suffix == '.ndpa':
-		ndpi_fname = p.stem
-		ndpa_fname = p.name
+		ndpi_fname = str(p.parent)+'/'+p.stem
+		ndpa_fname = str(p.parent)+'/'+p.name
 	elif p.suffix == '.ndpi':
-		ndpi_fname = p.name
-		ndpa_fname = p.name+'.ndpa'
+		ndpi_fname = str(p.parent)+'/'+p.name
+		ndpa_fname = str(p.parent)+'/'+p.name+'.ndpa'
 	else:
 		conn.close()
 		raise Exception("Invalid filename")
 	
 	if files_exist(ndpi_fname,ndpa_fname):
+		# convert ndpi path to name for lookup in omero
+		ndpi_path = Path(ndpi_fname)
+		ndpi_fname = ndpi_path.name
+
 		return (ndpi_fname, ndpa_fname)
 	else:
 		conn.close()
