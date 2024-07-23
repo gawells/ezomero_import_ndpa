@@ -3,9 +3,10 @@ import ezomero as ez
 from omero import model
 import numpy as np
 import argparse
-import re
-import os
+# import re
+# import os
 import xmltodict
+from pathlib import Path
 
 
 def find_image_id(conn,filename):	
@@ -21,13 +22,6 @@ def find_image_id(conn,filename):
 				ndpi_index = np.min(found_ids)						
 				return(ndpi_index)
 
-# def get_stage_center(image):
-# 	meta_data = image[0].loadOriginalMetadata()
-# 	for item in meta_data[1]:
-# 		if type(item) is tuple:
-# 			if item[0] == 'stage.center':
-# 				stage_center = re.findall(digits,item[1])
-# 				return((int(stage_center[0]),int(stage_center[1])))
 
 def get_slide_center(image):
 	meta_data = image[0].loadOriginalMetadata()	
@@ -71,7 +65,6 @@ def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
 	else:
 		annotations = xml['annotations']['ndpviewstate']
 
-	# for roi in xml['annotations']['ndpviewstate']:		
 	for roi in annotations:		
 		omero_roi = {}
 		anno_type = roi['annotation']['@type']
@@ -164,17 +157,35 @@ def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
 
 	return omero_rois
 
+def files_exist(ndpi_fname,ndpa_fname):
+	result = True
+	ndpi = Path(ndpi_fname)
+	ndpa = Path(ndpa_fname)
+	if not ndpi.exists():
+		print(f'File does not exist: {str(ndpi_fname)}')
+		result = False
+	if not ndpa.exists():
+		print(f'File does not exist: {str(ndpa_fname)}')
+		result = False
+	return result
 
-def ndpa_name(fullname):
-	extension = re.compile('(.+)(\.ndpa)')
-	fname = extension.match(fullname.strip('\n'))
-	if fname:
-		ndpi_fname = fname.group(1)
-		ndpa_fname = fullname.strip('\n')
+def ndp_names(fullname,conn):
+	p = Path(fullname)	
+	if p.suffix == '.ndpa':
+		ndpi_fname = p.stem
+		ndpa_fname = p.name
+	elif p.suffix == '.ndpi':
+		ndpi_fname = p.name
+		ndpa_fname = p.name+'.ndpa'
 	else:
-		ndpi_fname = fullname.strip('\n')
-		ndpa_fname = fullname+'.ndpa'
-	return (ndpi_fname, ndpa_fname)
+		conn.close()
+		raise Exception("Invalid filename")
+	
+	if files_exist(ndpi_fname,ndpa_fname):
+		return (ndpi_fname, ndpa_fname)
+	else:
+		conn.close()
+		raise Exception("Invalid filename")
 
 
 def add_rois(conn,ndpi_fname,ndpa_fname):	
@@ -216,11 +227,11 @@ def main():
 		with open(args.filelist) as flist:
 			line = flist.readline()			
 			while line != '':								
-				ndpi_fname,ndpa_fname = ndpa_name(line)
+				ndpi_fname,ndpa_fname = ndp_names(line,conn)
 				add_rois(conn,ndpi_fname,ndpa_fname)		
 				line = flist.readline()
 	elif args.filename:
-		ndpi_fname,ndpa_fname = ndpa_name(args.filename)
+		ndpi_fname,ndpa_fname = ndp_names(args.filename,conn)
 		add_rois(conn,ndpi_fname,ndpa_fname)
 	else:
 		return
