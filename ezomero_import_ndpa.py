@@ -197,8 +197,9 @@ def ndp_names(fullname,conn):
         ndpi_fname = str(p.parent)+'/'+p.name
         ndpa_fname = str(p.parent)+'/'+p.name+'.ndpa'
     else:
-        conn.close()
-        raise Exception(f'Invalid filename 1: {fullname}')
+        return ('','')
+        # conn.close()
+        # raise Exception(f'Invalid filename 1: {fullname}')
     
     if files_exist(ndpi_fname,ndpa_fname):
         # convert ndpi path to name for lookup in omero
@@ -207,8 +208,9 @@ def ndp_names(fullname,conn):
 
         return (ndpi_fname, ndpa_fname)
     else:
-        conn.close()
-        raise Exception(f'Invalid filename 2: {fullname}')
+        return ('','')
+        # conn.close()
+        # raise Exception(f'Invalid filename 2: {fullname}')
 
 
 def add_rois(conn,ndpi_fname,ndpa_fname,roi_service=None):  
@@ -245,19 +247,21 @@ def main():
     parser.add_argument('-l', '--filelist')
     args = parser.parse_args()      
     conn = ez.connect()
-    # roi_service = conn.getRoiService()
-    # return
 
     if args.filelist:
         with open(args.filelist) as flist:
             line = flist.readline()         
             while line != '':                               
                 ndpi_fname,ndpa_fname = ndp_names(line,conn)
-                add_rois(conn,ndpi_fname,ndpa_fname)        
+                if ndpi_fname != '':
+                    print(f'Adding ROIs from {ndpa_fname}')
+                    add_rois(conn,ndpi_fname,ndpa_fname)        
                 line = flist.readline()
     elif args.filename: 
         ndpi_fname,ndpa_fname = ndp_names(args.filename,conn)
-        add_rois(conn,ndpi_fname,ndpa_fname,roi_service)        
+        if ndpi_fname != '':
+            print(f'Adding ROIs from {ndpa_fname}')
+            add_rois(conn,ndpi_fname,ndpa_fname,roi_service)        
     else:
         return
         
