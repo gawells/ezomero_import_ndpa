@@ -1,8 +1,7 @@
-#!/home/skyscan/anaconda3/envs/omero/bin/python
+#!/usr/bin/env python3
 import ezomero as ez
 from ezomero.rois import Rectangle,Line,Polyline,Polygon,Point,Ellipse
 from omero import model
-# from omero.rtypes import unwrap
 import numpy as np
 import argparse
 import xmltodict
@@ -190,7 +189,7 @@ def files_exist(ndpi_fname,ndpa_fname):
 
 
 def ndp_names(fullname,conn):
-    p = Path(fullname.strip('\n'))  
+    p = Path(fullname.strip('\npyt'))  
     if p.suffix == '.ndpa':
         ndpi_fname = str(p.parent)+'/'+p.stem
         ndpa_fname = str(p.parent)+'/'+p.name
