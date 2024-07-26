@@ -2,7 +2,7 @@
 import ezomero as ez
 from ezomero.rois import Rectangle,Line,Polyline,Polygon,Point,Ellipse
 from omero import model
-from omero.rtypes import unwrap
+# from omero.rtypes import unwrap
 import numpy as np
 import argparse
 import xmltodict
@@ -190,7 +190,7 @@ def files_exist(ndpi_fname,ndpa_fname):
 
 
 def ndp_names(fullname,conn):
-    p = Path(fullname)  
+    p = Path(fullname.strip('\n'))  
     if p.suffix == '.ndpa':
         ndpi_fname = str(p.parent)+'/'+p.stem
         ndpa_fname = str(p.parent)+'/'+p.name
@@ -199,7 +199,7 @@ def ndp_names(fullname,conn):
         ndpa_fname = str(p.parent)+'/'+p.name+'.ndpa'
     else:
         conn.close()
-        raise Exception("Invalid filename")
+        raise Exception(f'Invalid filename 1: {fullname}')
     
     if files_exist(ndpi_fname,ndpa_fname):
         # convert ndpi path to name for lookup in omero
@@ -209,7 +209,7 @@ def ndp_names(fullname,conn):
         return (ndpi_fname, ndpa_fname)
     else:
         conn.close()
-        raise Exception("Invalid filename")
+        raise Exception(f'Invalid filename 2: {fullname}')
 
 
 def add_rois(conn,ndpi_fname,ndpa_fname,roi_service=None):  
@@ -246,7 +246,7 @@ def main():
     parser.add_argument('-l', '--filelist')
     args = parser.parse_args()      
     conn = ez.connect()
-    roi_service = conn.getRoiService()
+    # roi_service = conn.getRoiService()
     # return
 
     if args.filelist:
