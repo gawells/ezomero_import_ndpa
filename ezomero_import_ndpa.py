@@ -219,7 +219,9 @@ def check_dupl_roi(conn,image_id,new_roi,):
 
 
 def add_rois(conn,ndpi_fname,ndpa_fname):  
-    ndpi_index = find_image_id(conn,ndpi_fname)
+    ndpi_index = find_image_id(conn,ndpi_fname)    
+    if not ndpi_index or ndpi_index == None:
+        return
     
     image = ez.get_image(conn,image_id=int(ndpi_index),no_pixels=True)
     
