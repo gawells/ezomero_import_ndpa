@@ -242,7 +242,7 @@ def add_rois(conn,ndpi_fname,ndpa_fname):
         shapes = list()
         shapes.append(roi[0])   
         roi_exists = check_dupl_roi(conn,int(ndpi_index),shapes[0])
-        print(roi_exists)
+        # print(roi_exists)
         if roi_exists == False:
             ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
         elif roi_exists == True:
