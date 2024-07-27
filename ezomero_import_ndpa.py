@@ -49,17 +49,6 @@ def hex_to_rgba(hcolor):
     hcolor = hcolor.lstrip('#')
     return tuple([int(hcolor[i:i+2], 16) for i in (0, 2, 4)]+[255])
 
-    
-def check_dupl_roi(roi_service,image_id,new_roi,conn=None):
-    roi_ids = ez.get_roi_ids(conn, image_id)
-    for roi_id in roi_ids:
-        shape_ids = ez.get_shape_ids(conn, roi_id)
-        for shape_id in shape_ids:
-            shape = ez.get_shape(conn,shape_id)
-            if type(shape) == type(new_roi) and DeepDiff(new_roi,shape) == {}:
-                return True            
-    return False
-
 
 def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
     omero_rois = []
@@ -197,6 +186,7 @@ def ndp_names(fullname,conn):
         ndpi_fname = str(p.parent)+'/'+p.name
         ndpa_fname = str(p.parent)+'/'+p.name+'.ndpa'
     else:
+        print(f'Bad extension: {fullname}')
         return ('','')
         # conn.close()
         # raise Exception(f'Invalid filename 1: {fullname}')
@@ -213,7 +203,22 @@ def ndp_names(fullname,conn):
         # raise Exception(f'Invalid filename 2: {fullname}')
 
 
-def add_rois(conn,ndpi_fname,ndpa_fname,roi_service=None):  
+def check_dupl_roi(conn,image_id,new_roi,):
+    roi_ids = ez.get_roi_ids(conn, image_id)
+    for roi_id in roi_ids:
+        shape_ids = ez.get_shape_ids(conn, roi_id)
+        for shape_id in shape_ids:
+            shape = ez.get_shape(conn,shape_id)
+            if type(shape) == type(new_roi) and DeepDiff(new_roi,shape) == {}:
+                return True            
+            elif type(shape) == type(new_roi) and \
+            DeepDiff(new_roi,shape,exclude_paths=['label','stroke_color']) == {}:
+                # print("Same geometry")
+                return (('Same geometry',roi_id,shape_id))
+    return False
+
+
+def add_rois(conn,ndpi_fname,ndpa_fname):  
     ndpi_index = find_image_id(conn,ndpi_fname)
     
     image = ez.get_image(conn,image_id=int(ndpi_index),no_pixels=True)
@@ -236,7 +241,14 @@ def add_rois(conn,ndpi_fname,ndpa_fname,roi_service=None):
     for roi in rois:        
         shapes = list()
         shapes.append(roi[0])   
-        if not check_dupl_roi(roi_service,int(ndpi_index),shapes[0],conn):
+        roi_exists = check_dupl_roi(conn,int(ndpi_index),shapes[0])
+        print(roi_exists)
+        if roi_exists == False:
+            ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
+        elif roi_exists == True:
+            pass
+        elif roi_exists[0] == 'Same geometry':
+            conn.deleteObjects("Roi", [roi_exists[1]])
             ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
         # how does description show up in Omero?
 
@@ -261,7 +273,7 @@ def main():
         ndpi_fname,ndpa_fname = ndp_names(args.filename,conn)
         if ndpi_fname != '':
             print(f'Adding ROIs from {ndpa_fname}')
-            add_rois(conn,ndpi_fname,ndpa_fname,roi_service)        
+            add_rois(conn,ndpi_fname,ndpa_fname)        
     else:
         return
         
