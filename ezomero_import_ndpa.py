@@ -146,7 +146,21 @@ def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
                                 # 'Arrow' seems to be the only string recognised for marker(Start/End)
                                 # 'Circle' and 'Square' are ignored.
 
-            omero_rois.append((new_roi,omero_roi['description']))           
+            omero_rois.append((new_roi,omero_roi['description']))     
+        elif anno_type == 'linearmeasure' and display_name == 'AnnotateRuler':          
+            omero_roi['x1'] = (int(roi['annotation']['x1'])/nmPerPxX+offset['x'])
+            omero_roi['y1'] = (int(roi['annotation']['y1'])/nmPerPxY+offset['y'])
+            omero_roi['x2'] = (int(roi['annotation']['x2'])/nmPerPxX+offset['x'])
+            omero_roi['y2'] = (int(roi['annotation']['y2'])/nmPerPxY+offset['y'])
+
+            new_roi = ez.rois.Line(x1=omero_roi['x1'],x2=omero_roi['x2'],
+                                y1=omero_roi['y1'],y2=omero_roi['y2'],
+                                stroke_color=hex_to_rgba(omero_roi['line_color']),
+                                fill_color=(0,0,0,0),
+                                stroke_width=1.0,
+                                label=omero_roi['label'],markerStart='Arrow',markerEnd='Arrow')                                 
+
+            omero_rois.append((new_roi,omero_roi['description']))     
         elif anno_type == 'pin' and display_name == 'AnnotatePin':          
             omero_roi['x'] = (int(roi['annotation']['x']))/nmPerPxX+offset['x']
             omero_roi['y'] = (int(roi['annotation']['y']))/nmPerPxY+offset['y']         
