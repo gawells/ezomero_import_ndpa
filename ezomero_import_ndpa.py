@@ -7,6 +7,7 @@ import argparse
 import xmltodict
 from pathlib import Path
 from deepdiff import DeepDiff
+import time
 
 
 def find_image_id(conn,filename):   
@@ -201,9 +202,7 @@ def ndp_names(fullname,conn):
         ndpa_fname = str(p.parent)+'/'+p.name+'.ndpa'
     else:
         print(f'Bad extension: {fullname}')
-        return ('','')
-        # conn.close()
-        # raise Exception(f'Invalid filename 1: {fullname}')
+        return ('','')        
     
     if files_exist(ndpi_fname,ndpa_fname):
         # convert ndpi path to name for lookup in omero
@@ -213,13 +212,11 @@ def ndp_names(fullname,conn):
         return (ndpi_fname, ndpa_fname)
     else:
         return ('','')
-        # conn.close()
-        # raise Exception(f'Invalid filename 2: {fullname}')
-
+        
 
 def check_dupl_roi(conn,image_id,new_roi,):
     roi_ids = ez.get_roi_ids(conn, image_id)
-    for roi_id in roi_ids:
+    for roi_id in roi_ids:        
         shape_ids = ez.get_shape_ids(conn, roi_id)
         for shape_id in shape_ids:
             shape = ez.get_shape(conn,shape_id)
@@ -258,13 +255,15 @@ def add_rois(conn,ndpi_fname,ndpa_fname):
         shapes = list()
         shapes.append(roi[0])   
         roi_exists = check_dupl_roi(conn,int(ndpi_index),shapes[0])
-        # print(roi_exists)
         if roi_exists == False:
             ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
         elif roi_exists == True:
             pass
         elif roi_exists[0] == 'Same geometry':
-            conn.deleteObjects("Roi", [roi_exists[1]])
+            conn.deleteObjects("Roi", [roi_exists[1]],wait=True) #what does wait do??
+            # There seems to be some latency between this script and the Omero server
+            # that results in adding a new roi instead replacing the duplicate geometry
+            time.sleep(0.25)
             ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
         # how does description show up in Omero?
 
