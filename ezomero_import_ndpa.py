@@ -260,11 +260,13 @@ def add_rois(conn,ndpi_fname,ndpa_fname):
         elif roi_exists == True:
             pass
         elif roi_exists[0] == 'Same geometry':
-            conn.deleteObjects("Roi", [roi_exists[1]],wait=True) #what does wait do??
+            ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
+            # Swapping order of addition deletion seems to avoid latency problems:
+            # time.sleep(0.25)
             # There seems to be some latency between this script and the Omero server
             # that results in adding a new roi instead replacing the duplicate geometry
-            time.sleep(0.25)
-            ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
+            # Sure there's a way to just modify the ROI label text and colour?
+            conn.deleteObjects("Roi", [roi_exists[1]],wait=True) #what does wait do??
         # how does description show up in Omero?
 
 
