@@ -3,10 +3,10 @@ Import ROIs from a Hammamatsu `.npda` file/s into Omero using [ezomero](https://
 
 ## Installation 
 `ezomero` doesn't seem to work with the most current Python used by Omero server.
-```
-> conda create -n omero python=3.9 conda-forge::zeroc-ice==3.6.5 omero-py
-> conda activate omero
-> conda install argparse xmltodict deepdiff pathlib
+```Shell
+conda create -n omero python=3.9 conda-forge::zeroc-ice==3.6.5 omero-py
+conda activate omero
+conda install argparse xmltodict deepdiff pathlib # or pip install
 ```
 ## Usage
 First create `~/.ezomero`
