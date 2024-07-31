@@ -10,7 +10,7 @@ Import ROIs from a Hammamutsu `.npda` file/s into Omero using [ezomero](https://
 ```
 ## Usage
 First create `~/.ezomero`
-```
+```INI
 [DEFAULT]
 OMERO_USER = user.name@institute.org
 OMERO_GROUP = groupname
