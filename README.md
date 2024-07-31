@@ -1,7 +1,7 @@
 # ezomero_import_ndpa
 Import ROIs from a Hammamutsu `.npda` file/s into Omero using [ezomero](https://github.com/TheJacksonLaboratory/ezomero?tab=readme-ov-file) (mostly).
 
-## Istallation 
+## Installation 
 `ezomero` doesn't seem to work with the most current Python used by Omero server.
 ```
 > conda create -n omero python=3.9 conda-forge::zeroc-ice==3.6.5 omero-py
