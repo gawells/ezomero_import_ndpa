@@ -34,7 +34,7 @@ conda activate omero
 - Only the first matching instance will have ROIs added.
 - Rulers are represented as double-headed arrows.
 - Each Hammatsu ROI is created as a single shape ROI in Omero.
-- Will check existing ROIs for duplicate geometry. If found the old ROI will be deleted and the new one added from the `.ndpa` file. There seem to be some latency issues between script and server, sometimes the old ROI isn't deleted. Adding first and deleting seems to mostly solve this, as well as running on the server itself and not from another client.
+- Will check existing ROIs for duplicate geometry. If found the ROI will be updated with the new label and/or stroke color.
 - The 'details' field in `.ndpa` is stored as 'description' in `ezomero`, but I don't know where this ends up in Omero.
   
 
