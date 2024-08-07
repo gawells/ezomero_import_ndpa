@@ -2,6 +2,7 @@
 import ezomero as ez
 from ezomero.rois import Rectangle,Line,Polyline,Polygon,Point,Ellipse
 from omero import model
+from omero.rtypes import wrap
 import numpy as np
 import argparse
 import xmltodict
@@ -49,6 +50,19 @@ def get_imageDims(image):
 def hex_to_rgba(hcolor):
     hcolor = hcolor.lstrip('#')
     return tuple([int(hcolor[i:i+2], 16) for i in (0, 2, 4)]+[255])
+
+
+# Modified from https://docs.openmicroscopy.org/omero/5.6.0/developers/Python.html#rois
+def rgba_to_int(rgba): 
+    """ Return the color as an Integer in RGBA encoding """
+    r = rgba[0] << 24
+    g = rgba[1] << 16
+    b = rgba[2] << 8
+    a = rgba[3]
+    rgba_int = r+g+b+a
+    if (rgba_int > (2**31-1)):       # convert to signed 32-bit int
+        rgba_int = rgba_int - 2**32
+    return rgba_int
 
 
 def convert_rois(fname,nmPerPxX,nmPerPxY,offset):
@@ -221,7 +235,7 @@ def check_dupl_roi(conn,image_id,new_roi,):
         for shape_id in shape_ids:
             shape = ez.get_shape(conn,shape_id)
             if type(shape) == type(new_roi) and DeepDiff(new_roi,shape) == {}:
-                return True            
+                return True
             elif type(shape) == type(new_roi) and \
             DeepDiff(new_roi,shape,exclude_paths=['label','stroke_color']) == {}:
                 # print("Same geometry")
@@ -259,14 +273,11 @@ def add_rois(conn,ndpi_fname,ndpa_fname):
             ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
         elif roi_exists == True:
             pass
-        elif roi_exists[0] == 'Same geometry':
-            ez.post_roi(conn, int(ndpi_index), shapes, description=roi[1])
-            # Swapping order of addition deletion seems to avoid latency problems:
-            # time.sleep(0.25)
-            # There seems to be some latency between this script and the Omero server
-            # that results in adding a new roi instead replacing the duplicate geometry
-            # Sure there's a way to just modify the ROI label text and colour?
-            conn.deleteObjects("Roi", [roi_exists[1]],wait=True) #what does wait do??
+        elif roi_exists[0] == 'Same geometry':            
+            shapeWrapper = conn.getObject("Shape", roi_exists[2])            
+            shapeWrapper.setTextValue(wrap(roi[0].label))
+            shapeWrapper.setStrokeColor(wrap(rgba_to_int(roi[0].stroke_color)))
+            shapeWrapper.save()
         # how does description show up in Omero?
 
 
